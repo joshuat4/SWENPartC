@@ -65,7 +65,7 @@ public class AIController extends CarController {
 		}
 		
 		if(hasReachedNextDest) {
-			System.out.println("reacalculating");
+			System.out.println("recalculating");
 			List<Node> result =exploreDijkstras(new Coordinate(carrrr.getPosition()));
 			result.add(new Node("1,2"));
 			pathList.add(result);
@@ -157,7 +157,17 @@ public class AIController extends CarController {
 //		
 		
 		
-		
+		if(isTurningLeft){
+			if(!checkLeftWall(getOrientation(),currentView)){
+				applyLeftTurn(getOrientation(), delta);
+			}
+		}
+
+		if(isTurningRight){
+			if(!checkRightWall(getOrientation(), currentView)){
+				applyRightTurn(getOrientation(), delta);
+			}
+		}
 		
 		
 		//Car movement code-----------------------------------------------------------------------------------
@@ -180,7 +190,9 @@ public class AIController extends CarController {
 				Coordinate currPos = new Coordinate (getPosition());
 				Coordinate targetPos = new Coordinate(path.get(counter).getName());
 				WorldSpatial.Direction dir = getDirection(currPos, targetPos);
+				System.out.println("dir: "+ dir);
 				boolean isFacingTarget = dir.equals(getOrientation());
+
 				// If we are on the target, move on to next.
 				if(currPos.equals(targetPos)) {
 					System.out.println(currPos);
@@ -200,41 +212,41 @@ public class AIController extends CarController {
 						if(getOrientation().equals(WorldSpatial.Direction.EAST)) {
 							if(dir == WorldSpatial.Direction.SOUTH) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								applyRightTurn(getOrientation(), delta);
+								isTurningRight = true;
 							}
 							if(dir == WorldSpatial.Direction.NORTH) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								applyLeftTurn(getOrientation(), delta);
+								isTurningLeft = true;
 							}
 						}
 						if(getOrientation().equals(WorldSpatial.Direction.SOUTH)) {
 							if(dir == WorldSpatial.Direction.WEST) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								applyRightTurn(getOrientation(), delta);
+								isTurningRight = true;
 							}
 							if(dir == WorldSpatial.Direction.EAST) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								applyLeftTurn(getOrientation(), delta);
+								isTurningLeft = true;
 							}
 						}
 						if(getOrientation().equals(WorldSpatial.Direction.WEST)) {
 							if(dir == WorldSpatial.Direction.NORTH) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								applyRightTurn(getOrientation(), delta);
+								isTurningRight = true;
 							}
 							if(dir == WorldSpatial.Direction.SOUTH) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								applyLeftTurn(getOrientation(), delta);
+								isTurningLeft = true;
 							}
 						}
 						if(getOrientation().equals(WorldSpatial.Direction.NORTH)) {
 							if(dir == WorldSpatial.Direction.EAST) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								applyRightTurn(getOrientation(), delta);
+								isTurningRight = true;
 							}
 							if(dir == WorldSpatial.Direction.WEST) {
 								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								applyLeftTurn(getOrientation(), delta);
+								isTurningLeft = true;
 							}
 						}
 						
@@ -705,7 +717,7 @@ public class AIController extends CarController {
 	 * @param currentView
 	 * @return
 	 */
-	private boolean checkFollowingWall(WorldSpatial.Direction orientation, HashMap<Coordinate, MapTile> currentView) {
+	private boolean checkLeftWall(WorldSpatial.Direction orientation, HashMap<Coordinate, MapTile> currentView) {
 		
 		switch(orientation){
 		case EAST:
@@ -720,6 +732,23 @@ public class AIController extends CarController {
 			return false;
 		}
 		
+	}
+
+	private boolean checkRightWall(WorldSpatial.Direction orientation, HashMap<Coordinate, MapTile> currentView) {
+
+		switch(orientation){
+			case EAST:
+				return checkSouth(currentView);
+			case NORTH:
+				return checkEast(currentView);
+			case SOUTH:
+				return checkWest(currentView);
+			case WEST:
+				return checkNorth(currentView);
+			default:
+				return false;
+		}
+
 	}
 	
 
