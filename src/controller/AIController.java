@@ -5,6 +5,7 @@ import java.util.*;
 import tiles.*;
 import tiles.MapTile.Type;
 import utilities.Coordinate;
+import utilities.PeekTuple;
 import world.Car;
 import world.World;
 import world.WorldSpatial;
@@ -13,6 +14,8 @@ public class AIController extends CarController {
 	
 	// How many minimum units the wall is away from the player.
 	private int wallSensitivity = 2;
+	private boolean debug = true;
+	private boolean useTestPath = false;
 	
 	
 	private boolean isFollowingWall = false; // This is initialized when the car sticks to a wall.
@@ -49,12 +52,16 @@ public class AIController extends CarController {
 	//List of paths that the car will need to go through
 	Queue<List<Node>> pathList = new LinkedList<>();
 	//Current path being followed
-	List<Node> path = new ArrayList<>(); 
+	List<Node> path = new ArrayList<>();
+	List<Node> testpath = new ArrayList<>();
+	List<Coordinate> coordList = new ArrayList<>();
+
 	
 	@Override
 	public void update(float delta) {
 		// Gets what the car can see
 		HashMap<Coordinate, MapTile> currentView = getView();
+		checkStateChange();
 		for(Coordinate i : currentView.keySet()) {
 			
 			//Building up wholeMap with data from currentView
@@ -63,116 +70,33 @@ public class AIController extends CarController {
 			}
 	
 		}
-		
+
+		//Handles Steering
+		if(isTurningLeft){
+			debugPrint("TRYING TO TURN LEFT");
+			applySafeLeftTurn(delta);
+		} else if(isTurningRight){
+			debugPrint("TRYING TO TURN RIGHT");
+			applySafeRightTurn(delta);
+		} else {
+			readjust(lastTurnDirection, delta);
+		}
+
+
+		//
 		if(hasReachedNextDest) {
-			System.out.println("recalculating");
+			debugPrint("Recalculating Route.");
+//			System.out.println("recalculating");
 			List<Node> result =exploreDijkstras(new Coordinate(carrrr.getPosition()));
 			result.add(new Node("1,2"));
 			pathList.add(result);
-			hasReachedNextDest = false;      
-		}
-		
-		
-		//While no exposed nodes
-//		if(wholeMap.keySet().size() >= (World.MAP_HEIGHT * World.MAP_WIDTH) && firstTime == 0) {
-//			System.out.println(carrrr.getPosition().toString());
-//			graphWithShortestPaths = initialiseDijkstras(new Coordinate(carrrr.getPosition()));
-//			//Look for keys
-//			for(Coordinate j : wholeMap.keySet()) {
-//				if(wholeMap.get(j) instanceof LavaTrap) {
-//					LavaTrap l;
-//					l = (LavaTrap)wholeMap.get(j);
-//					if(l.getKey()==1 || l.getKey() == 2 || l.getKey() == 3) {
-//						//If this succeeds j will be the coordinate of the first key
-//						for(Node node : graphWithShortestPaths.getNodes()){
-//							if(node.getName().equals(j.toString())) {
-//								List<Node> result = node.getShortestPath(); 
-//								System.out.println(l.getKey());  
-////								System.out.println(result.toString());
-//								for(Node k : result) {
-//									System.out.print(k.getName() + "--");
-//								}
-//								System.out.print(node.getName());
-//								System.out.print("\n");           
-//							}
-//						}
-//					}
-//					
-//				}
-//			}
-//			
-//			firstTime = 1;
-//		}
-//		
-		
-//		if(test == 0) {
-//			Node node1 = new Node("3,3");
-//			Node node2 = new Node("4,3");
-//			Node node3 = new Node("5,3");
-//			Node node4 = new Node("6,3");
-//			Node node5 = new Node("7,3");
-//			Node node6 = new Node("8,3");
-//			Node node7 = new Node("9,3");
-//			Node node8 = new Node("10,3");
-//			Node node9 = new Node("11,3");
-//			Node node10 = new Node("12,3");
-//			Node node11 = new Node("13,3");
-//			Node node12 = new Node("14,3");
-//			Node node13 = new Node("15,3");
-//			path.add(node1);
-//			path.add(node2);
-//			path.add(node3);
-//			path.add(node4);
-//			path.add(node5);
-//			path.add(node6);
-//			path.add(node7);
-//			path.add(node8);
-//			path.add(node9);
-//			path.add(node10);
-//			path.add(node11);
-//			path.add(node12);
-//			path.add(node13);
-//			path.add(new Node("16,3"));
-//			path.add(new Node("17,3"));
-//			path.add(new Node("18,3"));
-//			path.add(new Node("19,3"));
-//			path.add(new Node("20,3"));
-//			path.add(new Node("21,3"));
-//			newPath.add(new Node("21,4"));
-//			newPath.add(new Node("21,5"));
-//			newPath.add(new Node("21,6"));
-//			newPath.add(new Node("21,7"));
-//			newPath.add(new Node("21,8"));
-//			newPath.add(new Node("21,9"));
-//			newPath.add(new Node("21,10"));
-//			newPath.add(new Node("21,11"));
-//			newPath.add(new Node("21,12"));
-//			newPath.add(new Node("21,13"));
-//			newPath.add(new Node("21,14"));
-//			newPath.add(new Node("21,15"));
-//			newPath.add(new Node("22,15"));
-//			newPath.add(new Node("23,15"));
-//			test = 1;
-//		}
-//		
-		
-		
-		if(isTurningLeft){
-			if(!checkLeftWall(getOrientation(),currentView)){
-				applyLeftTurn(getOrientation(), delta);
-			}
+			hasReachedNextDest = false;
 		}
 
-		if(isTurningRight){
-			if(!checkRightWall(getOrientation(), currentView)){
-				applyRightTurn(getOrientation(), delta);
-			}
-		}
-		
-		
+
+
+
 		//Car movement code-----------------------------------------------------------------------------------
-		
-		//System.out.println(pathList.size()) ;
 		//If there's a path in the path array to follow
 		if(pathList.size() > 0 || processing) {
 			if(processing) {
@@ -183,70 +107,84 @@ public class AIController extends CarController {
 					path.get(counter+1);
 				}
 				catch(Exception e) {
+					debugPrint("Starting new path");
 					counter = 0;
 					processing = false;
 					hasReachedNextDest = true;
 				}
+
+
+
 				Coordinate currPos = new Coordinate (getPosition());
 				Coordinate targetPos = new Coordinate(path.get(counter).getName());
+
+				if(!coordList.contains(currPos)){
+					debugPrint("Recalculating Route (Not on route).");
+					List<Node> result =exploreDijkstras(new Coordinate(getPosition()));
+					result.add(new Node("99,99")); //This is just to make sure something is there.
+					pathList.add(result);
+					processing = false;
+					debugPrint(result);
+				}
+
+
 				WorldSpatial.Direction dir = getDirection(currPos, targetPos);
-				System.out.println("dir: "+ dir);
-				boolean isFacingTarget = dir.equals(getOrientation());
+
+				boolean isFacingTarget = false;
+
+				System.out.println("-----------------");
+				debugPrint("currPos: "+ currPos);
+				debugPrint("targetPos: "+ targetPos);
+				System.out.println("-----------------");
 
 				// If we are on the target, move on to next.
 				if(currPos.equals(targetPos)) {
-					System.out.println(currPos);
-					System.out.println(targetPos);
-					System.out.println("-------");
 					counter++;
 					currPos = targetPos;
-					targetPos = new Coordinate(path.get(counter).getName()); 
+					targetPos = new Coordinate(path.get(counter).getName());
+
+
+
 					if(!isFacingTarget){
 						isTurningSoon = true;
 					}
+					dir = getDirection(currPos, targetPos);
+					System.out.println("dir: "+ dir);
 				}
 				else {
+
+					System.out.println("dir: "+ dir + "|| carFront: " + getOrientation());
+					isFacingTarget = dir.equals(getOrientation());
+
 					//Not on target yet.
 					if(!isFacingTarget) {
 						//If not moving in Direction of target Coord:
-						if(getOrientation().equals(WorldSpatial.Direction.EAST)) {
-							if(dir == WorldSpatial.Direction.SOUTH) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								isTurningRight = true;
+						if(leftOrRight(dir) == null){
+							//this is bad.
+							debugPrint("Not left or right?");
+							debugPrint("UTURN REQUIRED");
+
+						} else {
+							debugPrint("leftOrRight: " + leftOrRight(dir));
+							lastTurnDirection = leftOrRight(dir);
+							int targetDegree = directionToDegree(dir);
+
+							debugPrint("PEEK: "+peek(getVelocity(), targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().toString());
+
+							if(peek(getVelocity(), targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(currPos)){
+								applyForwardAcceleration();
 							}
-							if(dir == WorldSpatial.Direction.NORTH) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								isTurningLeft = true;
-							}
-						}
-						if(getOrientation().equals(WorldSpatial.Direction.SOUTH)) {
-							if(dir == WorldSpatial.Direction.WEST) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								isTurningRight = true;
-							}
-							if(dir == WorldSpatial.Direction.EAST) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								isTurningLeft = true;
-							}
-						}
-						if(getOrientation().equals(WorldSpatial.Direction.WEST)) {
-							if(dir == WorldSpatial.Direction.NORTH) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								isTurningRight = true;
-							}
-							if(dir == WorldSpatial.Direction.SOUTH) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								isTurningLeft = true;
-							}
-						}
-						if(getOrientation().equals(WorldSpatial.Direction.NORTH)) {
-							if(dir == WorldSpatial.Direction.EAST) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-								isTurningRight = true;
-							}
-							if(dir == WorldSpatial.Direction.WEST) {
-								lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-								isTurningLeft = true;
+							if(lastTurnDirection.equals(WorldSpatial.RelativeDirection.RIGHT)){
+								if(peek(getVelocity(),targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(targetPos)){
+									debugPrint("RIGHT TURN SAFE");
+									isTurningRight = true;
+								}
+							} else{
+								if(peek(getVelocity(),targetDegree, WorldSpatial.RelativeDirection.LEFT, delta).getCoordinate().equals(targetPos)) {
+									debugPrint("LEFT TURN SAFE");
+
+									isTurningLeft = true;
+								}
 							}
 						}
 						
@@ -257,13 +195,14 @@ public class AIController extends CarController {
 						//Accelerate if not traveling at max speed
 						float x = CAR_SPEED;
 						if(isTurningSoon) {
-							x = CAR_SPEED/8f;
+							x = CAR_SPEED/4f;
 						}
 						if(getSpeed() < x){
 							isTurningSoon = false;
+							readjust(lastTurnDirection, delta);
 							applyForwardAcceleration();
 						}
-						
+
 					}
 					
 					
@@ -271,12 +210,25 @@ public class AIController extends CarController {
 				}
 				
 			} else {
-				path = pathList.poll();
+				if(useTestPath){
+					makeTestPath();
+					path = testpath;
+				} else {
+					path = pathList.poll();
+					//Populate coordList
+					for(Node n: path){
+						coordList.add(new Coordinate(n.getName()));
+					}
+
+				}
+				debugPrint(path);
 				processing = true; 
 				
 			}
 	
 			
+		} else {
+			debugPrint("End of path list");
 		}
 		
 	
@@ -349,10 +301,64 @@ public class AIController extends CarController {
 
 	}
 	
-	
+	private int directionToDegree(WorldSpatial.Direction dir){
+		switch(dir){
+			case WEST:
+				return WorldSpatial.WEST_DEGREE;
+			case EAST:
+				return WorldSpatial.EAST_DEGREE_MIN;
+			case NORTH:
+				return WorldSpatial.NORTH_DEGREE;
+			case SOUTH:
+				return WorldSpatial.SOUTH_DEGREE;
+		}
+		return 0;
+	}
 	
 		
-	
+	private WorldSpatial.RelativeDirection leftOrRight(WorldSpatial.Direction targetDir){
+		debugPrint("INSIDE SWITCH LEFT OR RIGHT: " + getOrientation() + "|| Target: "+targetDir);
+		switch (getOrientation()){
+			case EAST:
+				switch (targetDir){
+					case NORTH:
+						return WorldSpatial.RelativeDirection.LEFT;
+					case SOUTH:
+						return WorldSpatial.RelativeDirection.RIGHT;
+				}
+
+			case SOUTH:
+				switch(targetDir){
+					case WEST:
+						return WorldSpatial.RelativeDirection.RIGHT;
+
+					case EAST:
+						return WorldSpatial.RelativeDirection.LEFT;
+
+				}
+
+			case WEST:
+				switch (targetDir){
+					case NORTH:
+						return WorldSpatial.RelativeDirection.RIGHT;
+
+					case SOUTH:
+						return WorldSpatial.RelativeDirection.LEFT;
+
+				}
+
+			case NORTH:
+				switch (targetDir){
+					case EAST:
+						return WorldSpatial.RelativeDirection.RIGHT;
+
+					case WEST:
+						return WorldSpatial.RelativeDirection.LEFT;
+				}
+			default:
+				return null;
+		}
+	}
 	
 	
 	private WorldSpatial.Direction getDirection(Coordinate source, Coordinate destination){
@@ -362,8 +368,10 @@ public class AIController extends CarController {
 			return WorldSpatial.Direction.WEST;
 		} else if(destination.y > source.y) {
 			return WorldSpatial.Direction.NORTH;
-		} else {
+		} else if (destination.y < source.y){
 			return WorldSpatial.Direction.SOUTH;
+		} else {
+			return null;
 		}
 	}
 	
@@ -371,7 +379,11 @@ public class AIController extends CarController {
 	
 	
 	
-	
+	private void debugPrint(String message){
+		if(debug){
+			System.out.println("DEBUGGER: "+ message);
+		}
+	}
 	
 	
 	
@@ -530,6 +542,7 @@ public class AIController extends CarController {
 	 * @param delta
 	 */
 	private void readjust(WorldSpatial.RelativeDirection lastTurnDirection, float delta) {
+		debugPrint("READJUSTING: "+ lastTurnDirection);
 		if(lastTurnDirection != null){
 			if(!isTurningRight && lastTurnDirection.equals(WorldSpatial.RelativeDirection.RIGHT)){
 				adjustRight(getOrientation(),delta);
@@ -812,5 +825,66 @@ public class AIController extends CarController {
 	public MapTile.Type getCoordType(String coord){		
 		return wholeMap.get(new Coordinate(coord)).getType();
 	}
-	
+	private void applySafeLeftTurn(float delta){
+//		if(peek(getVelocity(),90f, WorldSpatial.RelativeDirection.LEFT, delta).getCoordinate().equals(targetPos)){
+//			applyLeftTurn(getOrientation(), delta);
+//		}
+		if(!checkLeftWall(getOrientation(),getView())){
+			applyLeftTurn(getOrientation(), delta);
+		}
+	}
+	private void applySafeRightTurn(float delta){
+//		if(peek(getVelocity(),0f, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(targetPos)){
+//			applyRightTurn(getOrientation(), delta);
+//		}
+		if(!checkRightWall(getOrientation(), getView())){
+			applyRightTurn(getOrientation(), delta);
+		}
+	}
+
+	public void debugPrint(List<Node> path){
+		if(debug){
+			System.out.print("Debugger: [");
+			for(Node i: path){
+				System.out.print("("+i.getName()+")");
+			}
+			System.out.println("]");
+		}
+
+	}
+	public void makeTestPath(){
+		if(test == 0) {
+			Node node0 = new Node("2,3");
+			Node node1 = new Node("3,3");
+			Node node2 = new Node("4,3");
+			Node node3 = new Node("5,3");
+			Node node4 = new Node("6,3");
+			Node node5 = new Node("7,3");
+			Node node6 = new Node("7,4");
+			Node node7 = new Node("7,5");
+			Node node8 = new Node("7,6");
+			Node node9 = new Node("7,7");
+			Node node10 = new Node("8,7");
+			Node node11 = new Node("9,7");
+			Node node12 = new Node("10,7");
+			Node node13 = new Node("11,7");
+			testpath.add(node0);
+			testpath.add(node1);
+			testpath.add(node2);
+			testpath.add(node3);
+			testpath.add(node4);
+			testpath.add(node5);
+			testpath.add(node6);
+			testpath.add(node7);
+			testpath.add(node8);
+			testpath.add(node9);
+			testpath.add(node10);
+			testpath.add(node11);
+			testpath.add(node12);
+			testpath.add(node13);
+		}
+	}
+
+
+
 }
