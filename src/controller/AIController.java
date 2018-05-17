@@ -125,6 +125,7 @@ public class AIController extends CarController {
 					pathList.add(result);
 					processing = false;
 					debugPrint(result);
+					counter = 0;
 				}
 
 
@@ -163,6 +164,15 @@ public class AIController extends CarController {
 							//this is bad.
 							debugPrint("Not left or right?");
 							debugPrint("UTURN REQUIRED");
+							applyReverseAcceleration();
+//							debugPrint("Recalculating Route (Not on route).");
+//							List<Node> result =exploreDijkstras(new Coordinate(getPosition()));
+//							result.add(new Node("99,99")); //This is just to make sure something is there.
+//							pathList.add(result);
+//							processing = false;
+//							debugPrint(result);
+//							counter = 0;
+
 
 						} else {
 							debugPrint("leftOrRight: " + leftOrRight(dir));
@@ -178,12 +188,17 @@ public class AIController extends CarController {
 								if(peek(getVelocity(),targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(targetPos)){
 									debugPrint("RIGHT TURN SAFE");
 									isTurningRight = true;
+								} else {
+									isTurningRight = false;
 								}
+
 							} else{
 								if(peek(getVelocity(),targetDegree, WorldSpatial.RelativeDirection.LEFT, delta).getCoordinate().equals(targetPos)) {
 									debugPrint("LEFT TURN SAFE");
 
 									isTurningLeft = true;
+								} else {
+									isTurningLeft = false;
 								}
 							}
 						}
@@ -325,6 +340,8 @@ public class AIController extends CarController {
 						return WorldSpatial.RelativeDirection.LEFT;
 					case SOUTH:
 						return WorldSpatial.RelativeDirection.RIGHT;
+					case WEST:
+						return null;
 				}
 
 			case SOUTH:
@@ -334,6 +351,9 @@ public class AIController extends CarController {
 
 					case EAST:
 						return WorldSpatial.RelativeDirection.LEFT;
+
+					case NORTH:
+						return null;
 
 				}
 
@@ -345,6 +365,9 @@ public class AIController extends CarController {
 					case SOUTH:
 						return WorldSpatial.RelativeDirection.LEFT;
 
+					case EAST:
+						return null;
+
 				}
 
 			case NORTH:
@@ -354,6 +377,9 @@ public class AIController extends CarController {
 
 					case WEST:
 						return WorldSpatial.RelativeDirection.LEFT;
+
+					case SOUTH:
+						return null;
 				}
 			default:
 				return null;
@@ -559,7 +585,7 @@ public class AIController extends CarController {
 	 * misaligned.
 	 */
 	private void adjustLeft(WorldSpatial.Direction orientation, float delta) {
-		
+		System.out.println(getAngle());
 		switch(orientation){
 		case EAST:
 			if(getAngle() > WorldSpatial.EAST_DEGREE_MIN+EAST_THRESHOLD){
