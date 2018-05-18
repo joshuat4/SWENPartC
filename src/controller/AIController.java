@@ -13,7 +13,7 @@ import world.WorldSpatial;
 public class AIController extends CarController {
 	
 	// How many minimum units the wall is away from the player.
-	private int wallSensitivity = 2;
+	private int wallSensitivity = 1;
 	private boolean debug = true;
 	private boolean useTestPath = false;
 	
@@ -21,7 +21,10 @@ public class AIController extends CarController {
 	private boolean isFollowingWall = false; // This is initialized when the car sticks to a wall.
 	private WorldSpatial.RelativeDirection lastTurnDirection = null; // Shows the last turn direction the car takes.
 	private boolean isTurningLeft = false;
-	private boolean isTurningRight = false; 
+	private boolean isTurningRight = false;
+	private boolean isAccelerating = true;
+	private boolean isReversing = false;
+	private boolean stateChange = false;
 	private WorldSpatial.Direction previousState = null; // Keeps track of the previous state
 	
 	// Car Speed to move at
@@ -70,6 +73,25 @@ public class AIController extends CarController {
 			}
 	
 		}
+//		if(getSpeed() > CAR_SPEED/2f){
+//			applyBrake();
+//		}
+
+//		if(checkWallAhead(getOrientation(), currentView)){
+//			isReversing = true;
+//		}
+//		if(checkRightWall(getOrientation(), currentView)){
+//			isTurningLeft = true;
+//		}
+//		if(checkLeftWall(getOrientation(), currentView)){
+//			isTurningRight = true;
+//		}
+
+
+
+		debugPrint("STATES: A: " + isAccelerating +" Rv: "+ isReversing +
+		" L: "+ isTurningLeft + " R: "+isTurningRight);
+
 
 		//Handles Steering
 		if(isTurningLeft){
@@ -81,6 +103,19 @@ public class AIController extends CarController {
 		} else {
 			readjust(lastTurnDirection, delta);
 		}
+		if(isAccelerating){
+			applySafeForwardAcceleration();
+			isAccelerating = false;
+		}
+
+		if(isReversing){
+			applySafeReverseAcceleration();
+//			isReversing = false;
+
+		}
+
+
+
 
 
 		//
@@ -164,7 +199,8 @@ public class AIController extends CarController {
 							//this is bad.
 							debugPrint("Not left or right?");
 							debugPrint("UTURN REQUIRED");
-							applyReverseAcceleration();
+
+							isReversing = true;
 //							debugPrint("Recalculating Route (Not on route).");
 //							List<Node> result =exploreDijkstras(new Coordinate(getPosition()));
 //							result.add(new Node("99,99")); //This is just to make sure something is there.
@@ -175,6 +211,7 @@ public class AIController extends CarController {
 
 
 						} else {
+							isReversing = false;
 							debugPrint("leftOrRight: " + leftOrRight(dir));
 							lastTurnDirection = leftOrRight(dir);
 							int targetDegree = directionToDegree(dir);
@@ -182,14 +219,17 @@ public class AIController extends CarController {
 							debugPrint("PEEK: "+peek(getVelocity(), targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().toString());
 
 							if(peek(getVelocity(), targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(currPos)){
-								applyForwardAcceleration();
+								isAccelerating = true;
+//								applyForwardAcceleration();
 							}
 							if(lastTurnDirection.equals(WorldSpatial.RelativeDirection.RIGHT)){
 								if(peek(getVelocity(),targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(targetPos)){
 									debugPrint("RIGHT TURN SAFE");
 									isTurningRight = true;
+									isAccelerating = false;
 								} else {
 									isTurningRight = false;
+									isAccelerating = true;
 								}
 
 							} else{
@@ -197,8 +237,10 @@ public class AIController extends CarController {
 									debugPrint("LEFT TURN SAFE");
 
 									isTurningLeft = true;
+									isAccelerating = false;
 								} else {
 									isTurningLeft = false;
+									isAccelerating = true;
 								}
 							}
 						}
@@ -215,7 +257,8 @@ public class AIController extends CarController {
 						if(getSpeed() < x){
 							isTurningSoon = false;
 							readjust(lastTurnDirection, delta);
-							applyForwardAcceleration();
+							isAccelerating = true;
+//							applyForwardAcceleration();
 						}
 
 					}
@@ -865,6 +908,18 @@ public class AIController extends CarController {
 //		}
 		if(!checkRightWall(getOrientation(), getView())){
 			applyRightTurn(getOrientation(), delta);
+		}
+	}
+	private void applySafeForwardAcceleration(){
+		if(getSpeed() < CAR_SPEED/2f){
+			applyForwardAcceleration();
+		}
+	}
+	private void applySafeReverseAcceleration(){
+		debugPrint("REVERSING");
+		if(getSpeed() < CAR_SPEED){
+			System.out.println("Speed: "+getSpeed());
+			applyReverseAcceleration();
 		}
 	}
 
