@@ -100,12 +100,10 @@ public class AIController extends CarController {
 		} else if(isTurningRight){
 			debugPrint("TRYING TO TURN RIGHT");
 			applySafeRightTurn(delta);
-		} else {
-			readjust(lastTurnDirection, delta);
 		}
 		if(isAccelerating){
+			debugPrint("No");
 			applySafeForwardAcceleration();
-			isAccelerating = false;
 		}
 
 		if(isReversing){
@@ -121,7 +119,6 @@ public class AIController extends CarController {
 		//
 		if(hasReachedNextDest) {
 			debugPrint("Recalculating Route.");
-//			System.out.println("recalculating");
 			List<Node> result =exploreDijkstras(new Coordinate(carrrr.getPosition()));
 			result.add(new Node("1,2"));
 			pathList.add(result);
@@ -192,15 +189,19 @@ public class AIController extends CarController {
 					System.out.println("dir: "+ dir + "|| carFront: " + getOrientation());
 					isFacingTarget = dir.equals(getOrientation());
 
+					if(dir.equals(oppositeOfOrientation(getOrientation()))){
+						isReversing = true;
+						isAccelerating = false;
+					}
+
 					//Not on target yet.
-					if(!isFacingTarget) {
+					if(!isFacingTarget && isReversing) {
 						//If not moving in Direction of target Coord:
 						if(leftOrRight(dir) == null){
 							//this is bad.
 							debugPrint("Not left or right?");
 							debugPrint("UTURN REQUIRED");
 
-							isReversing = true;
 //							debugPrint("Recalculating Route (Not on route).");
 //							List<Node> result =exploreDijkstras(new Coordinate(getPosition()));
 //							result.add(new Node("99,99")); //This is just to make sure something is there.
@@ -219,7 +220,7 @@ public class AIController extends CarController {
 							debugPrint("PEEK: "+peek(getVelocity(), targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().toString());
 
 							if(peek(getVelocity(), targetDegree, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(currPos)){
-								isAccelerating = true;
+								//isAccelerating = true;
 //								applyForwardAcceleration();
 							}
 							if(lastTurnDirection.equals(WorldSpatial.RelativeDirection.RIGHT)){
@@ -256,8 +257,7 @@ public class AIController extends CarController {
 						}
 						if(getSpeed() < x){
 							isTurningSoon = false;
-							readjust(lastTurnDirection, delta);
-							isAccelerating = true;
+							//isAccelerating = true;
 //							applyForwardAcceleration();
 						}
 
@@ -358,6 +358,21 @@ public class AIController extends CarController {
 		*/
 
 	}
+
+	private WorldSpatial.Direction oppositeOfOrientation(WorldSpatial.Direction dir){
+		switch(dir){
+			case EAST:
+				return WorldSpatial.Direction.WEST;
+			case WEST:
+				return WorldSpatial.Direction.EAST;
+			case NORTH:
+				return WorldSpatial.Direction.SOUTH;
+			case SOUTH:
+				return WorldSpatial.Direction.NORTH;
+		}
+		return null;
+	}
+
 	
 	private int directionToDegree(WorldSpatial.Direction dir){
 		switch(dir){
