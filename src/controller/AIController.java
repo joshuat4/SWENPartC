@@ -16,6 +16,8 @@ public class AIController extends CarController {
 	private int wallSensitivity = 1;
 	private boolean debug = true;
 	private boolean useTestPath = false;
+	private int frameCounter = 0;
+
 	
 	
 	private boolean isFollowingWall = false; // This is initialized when the car sticks to a wall.
@@ -179,7 +181,9 @@ public class AIController extends CarController {
 
 
 					if(!isFacingTarget){
-						isTurningSoon = true;
+//						isTurningSoon = true;
+						rotateAntiClockwise(delta);
+
 					}
 					dir = getDirection(currPos, targetPos);
 					System.out.println("dir: "+ dir);
@@ -201,14 +205,7 @@ public class AIController extends CarController {
 							//this is bad.
 							debugPrint("Not left or right?");
 							debugPrint("UTURN REQUIRED");
-
-//							debugPrint("Recalculating Route (Not on route).");
-//							List<Node> result =exploreDijkstras(new Coordinate(getPosition()));
-//							result.add(new Node("99,99")); //This is just to make sure something is there.
-//							pathList.add(result);
-//							processing = false;
-//							debugPrint(result);
-//							counter = 0;
+							rotateAntiClockwise(delta);
 
 
 						} else {
@@ -605,7 +602,23 @@ public class AIController extends CarController {
 		}
 		return returnPlaceholder; 
 	}
-	
+
+
+
+	private void rotateAntiClockwise(float delta){
+		turnLeft(delta);
+		if(frameCounter == 2){
+			applyForwardAcceleration();
+			frameCounter= 0;
+		}
+	}
+	private void rotateClockwise(float delta){
+		turnRight(delta);
+		if(frameCounter == 2){
+			applyForwardAcceleration();
+			frameCounter= 0;
+		}
+	}
 	
 	
 	
@@ -909,21 +922,25 @@ public class AIController extends CarController {
 	public MapTile.Type getCoordType(String coord){		
 		return wholeMap.get(new Coordinate(coord)).getType();
 	}
+
 	private void applySafeLeftTurn(float delta){
 //		if(peek(getVelocity(),90f, WorldSpatial.RelativeDirection.LEFT, delta).getCoordinate().equals(targetPos)){
 //			applyLeftTurn(getOrientation(), delta);
 //		}
-		if(!checkLeftWall(getOrientation(),getView())){
-			applyLeftTurn(getOrientation(), delta);
-		}
+//		if(!checkLeftWall(getOrientation(),getView())){
+//			applyLeftTurn(getOrientation(), delta);
+//		}
+
+		rotateAntiClockwise(delta);
 	}
 	private void applySafeRightTurn(float delta){
 //		if(peek(getVelocity(),0f, WorldSpatial.RelativeDirection.RIGHT, delta).getCoordinate().equals(targetPos)){
 //			applyRightTurn(getOrientation(), delta);
 //		}
-		if(!checkRightWall(getOrientation(), getView())){
-			applyRightTurn(getOrientation(), delta);
-		}
+//		if(!checkRightWall(getOrientation(), getView())){
+//			applyRightTurn(getOrientation(), delta);
+//		}
+		rotateAntiClockwise(delta);
 	}
 	private void applySafeForwardAcceleration(){
 		if(getSpeed() < CAR_SPEED/2f){
