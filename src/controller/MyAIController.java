@@ -46,78 +46,102 @@ public class MyAIController extends CarController {
     private int counter = 0;
     private int frameCounter = 0;
     private int turnIndex = 0;
-//    private trueCoord tCurrPos;
-//    private trueCoord tTargetPos;
     private ArrayList<Integer> turnList;
     private Coordinate nextTurn;
     private float speedAtBrake;
     private boolean firstTimeBrake = true;
     private boolean timeToGo = false;
     private boolean justTurned = false;
+    private int lastCase;
 
+    HashMap<Coordinate, MapTile> wholeMap = new HashMap<>();
+    Queue<List<Node>> pathList = new LinkedList<>();
+    List<Node> currPath = new ArrayList<>();
+    boolean hasReachedNextDest = true;
+    boolean processing = false;
 
 
 
     public MyAIController(Car car) {
         super(car);
-        makeTestPath();
-        turnList = getTurnList(testpath);
-        System.out.println(turnList);
+        //makeTestPath();
+        //System.out.println(turnList);
 
     }
 
     @Override
     public void update(float delta) {
-        // Gets what the car can see
         HashMap<Coordinate, MapTile> currentView = getView();
-        carSpeed = getSpeed();
-        carOrientation = getOrientation();
-        currPos = new Coordinate(getPosition());
-        targetPos = new Coordinate(testpath.get(counter).getName());
-//        tCurrPos = new trueCoord(getX(), getY());
-//        tTargetPos = new trueCoord(targetPos);
-//
-//        if(isAccelerating) {
-//        	applyForwardAcceleration();
-//        }
-//
-//        if(isBraking) {
-//        	//System.out.println("Braking");
-//        	applyBrake();
-//        }
-//        System.out.println("isAccelerating1: " + isAccelerating);
 
+        for(Coordinate i : currentView.keySet()) {
 
-        decideState();
-
-        System.out.print(isAccelerating);
-
-//        System.out.println(currState);
-        switch(currState) {
-            case Forward:
-                forwardState();
-                break;
-            case Turning:
-                isAccelerating = false;
-                turningState(delta);
-                break;
-            case Braking:
-                isAccelerating = false;
-                brakingState();
-                break;
+            //Building up wholeMap with data from currentView
+            if(i.x >= 0 && i.y >= 0 && i.x < World.MAP_WIDTH && i.y < World.MAP_HEIGHT ) {
+                wholeMap.put(i, currentView.get(i));
+            }
 
         }
 
-        if(isAccelerating && getSpeed() < CAR_SPEED) {
-            applyForwardAcceleration();
-
+        if(hasReachedNextDest) {
+            debugPrint("Recalculating Route.");
+            List<Node> result =Dijkstras.exploreDijkstras(wholeMap, new Coordinate(getPosition()));
+            result.add(new Node("1,2"));
+            pathList.add(result);
+            hasReachedNextDest = false;
         }
-        System.out.println(isAccelerating);
 
 
-//        System.out.println("isAccelerating2: " + isAccelerating);
+
+
+
+        if(pathList.size() > 0 || processing) {
+
+            if(processing) {
+                // Gets what the car can see
+                carSpeed = getSpeed();
+                carOrientation = getOrientation();
+                currPos = new Coordinate(getPosition());
+                targetPos = new Coordinate(currPath.get(counter).getName());
+                decideState();
+
+
+                switch(currState) {
+                    case Forward:
+                        forwardState();
+                        break;
+                    case Turning:
+                        isAccelerating = false;
+                        turningState(delta);
+                        break;
+                    case Braking:
+                        isAccelerating = false;
+                        brakingState();
+                        break;
+
+                }
+
+                if(isAccelerating && getSpeed() < CAR_SPEED) {
+                    applyForwardAcceleration();
+                }
+
+            } else {
+                currPath = pathList.poll();
+                turnList = getTurnList(currPath);
+                turnIndex = 0;
+                debugPrint(currPath);
+                processing = true;
+            }
+
+
+        } else {
+            debugPrint("End of path list");
+        }
+
+
+
+
+        System.out.println("isAccelerating2: " + isAccelerating);
         System.out.println("currentAngle: " + getAngle());
-        System.out.println("path[counter]: " + testpath.get(counter).getName());
         System.out.println("counter is: " + counter);
         System.out.println("framecounter is :" + frameCounter);
         System.out.println("currState is:" + currState);
@@ -125,7 +149,7 @@ public class MyAIController extends CarController {
         System.out.println("currPosition is: " + currPos.x + "," + currPos.y);
         System.out.println("targetPosition is: "+ targetPos.x + "," + targetPos.y);
         System.out.println("turnIndex: " + turnIndex + " turnList: " + turnList);
-        System.out.println("nextTurn is: "+ nextTurn.x + "," + nextTurn.y);
+//        System.out.println("nextTurn is: "+ nextTurn.x + "," + nextTurn.y);
         System.out.println("timeToGo is: " + timeToGo);
         System.out.println("-----aaaa-----");
 
@@ -138,8 +162,7 @@ public class MyAIController extends CarController {
     private void decideState() {
 
         if (turnIndex < turnList.size() ) {
-            nextTurn = new Coordinate(testpath.get(turnList.get(turnIndex)).getName());
-            float distToTurn = (nextTurn.x - currPos.x) + (nextTurn.y - currPos.y);
+            nextTurn = new Coordinate(currPath.get(turnList.get(turnIndex)).getName());
 
 
             if(currPos.equals(nextTurn)) {
@@ -148,11 +171,19 @@ public class MyAIController extends CarController {
 
             if(currPos.equals(targetPos)) {
                 counter += 1;
+                try {
+                    currPath.get(counter+1);
+                }
+                catch(Exception e) {
+                    debugPrint("Starting new path");
+                    counter = 0;
+                    processing = false;
+                    hasReachedNextDest = true;
+                }
             }
 
             if (timeToGo) {
                 if(counter-1 >= turnList.get(turnIndex)) {
-                    System.out.println("PLEASE");
                     turnIndex += 1 ;
                     currState = STATE.Forward;
                     //timeToGo = false;
@@ -161,17 +192,7 @@ public class MyAIController extends CarController {
 
 
 
-            //brake
-//            if((1.46f*distToTurn) <= getSpeed() && firstTimeBrake) {
-//                speedAtBrake = getSpeed();
-//                firstTimeBrake = false;
-//                System.out.println("BRAKESPEED: "+ speedAtBrake);
-//                System.out.println(getSpeed());
-//            } else {
-//                firstTimeBrake = true;
-//            }
-
-            System.out.println("distToTurn is: " + distToTurn);
+//            System.out.println("distToTurn is: " + distToTurn);
 
             if(timeToGo && justTurned){
                currState = STATE.Forward;
@@ -180,9 +201,9 @@ public class MyAIController extends CarController {
 
             if((brakeLogic(nextTurn))){
                 currState = STATE.Braking;
-                System.out.println("HERE: " + getSpeed());
+               // System.out.println("HERE: " + getSpeed());
                 if(getSpeed() <= 0.25f) {
-                    System.out.println("REEE");
+                   // System.out.println("REEE");
                     currState = STATE.Turning;
                     if(timeToGo) {
                         currState = STATE.Forward;
@@ -204,7 +225,7 @@ public class MyAIController extends CarController {
 
     private boolean brakeLogic(Coordinate nextTurn){
         debugPrint("getX");
-        System.out.println(getX());
+        //System.out.println(getX());
         float distToPointX = (Math.abs(getX() - nextTurn.x));
         float distToPointY = (Math.abs(getY() - nextTurn.y));
         float distToPoint;
@@ -228,16 +249,16 @@ public class MyAIController extends CarController {
         debugPrint("res: "+ res);
 
         if(distToPoint < 0.25f){
-            System.out.println("HHH");
+          //  System.out.println("HHH");
             return true;
         }
 
-        System.out.println("TRUTH :" + (distToPoint <= res) );
+      //  System.out.println("TRUTH :" + (distToPoint <= res) );
 
         if(distToPoint <=  res ){
             return true;
         } else {
-            System.out.println(" OK K");
+           // System.out.println(" OK K");
             return false;
         }
 
@@ -253,11 +274,7 @@ public class MyAIController extends CarController {
         applySafeForwardAcceleration();
     }
 
-    //    private void reverseState(float delta) {
-//    	//applySafeReverseAcceleration();
-//
-//    }
-//
+
     private void turningState(float delta) {
         frameCounter += 1;
         faceTarget(currPos, targetPos, delta);
@@ -266,30 +283,21 @@ public class MyAIController extends CarController {
     private void brakingState() {
         applyBrake();
     }
-//    private void stuck(float delta) {
-//    	//recalculate!
-//    }
 
 
 
     private void faceTarget(Coordinate currPos, Coordinate targetPos, float delta) {
         WorldSpatial.Direction targetDir = getDirection(currPos, targetPos);
-        System.out.println("HUH");
-    	System.out.println(currPos.x + "," + currPos.y);
-    	System.out.println(targetPos.x + "," + targetPos.y);
-    	System.out.println("-----------------------");
+//        System.out.println("HUH");
+//    	System.out.println(currPos.x + "," + currPos.y);
+//    	System.out.println(targetPos.x + "," + targetPos.y);
+//    	System.out.println("-----------------------");
 
 
 
-//    	if(targetDir == null) {
-//    		timeToGo = true;
-//    		currState = STATE.Forward;
-//    	}
 
-
-//    	else {
-        System.out.println("targetDir degree is: " + directionToDegree(targetDir));
-        if(Float.compare(getAngle(), directionToDegree(targetDir)) <= 0) {
+       // System.out.println("targetDir degree is: " + directionToDegree(targetDir));
+        if(Float.compare(getAngle(), directionToDegree(targetDir)) != 0) {
             WorldSpatial.RelativeDirection leftRight = leftOrRight(targetDir);
             if(leftRight == null) {
                 justTurned = true;
@@ -309,7 +317,7 @@ public class MyAIController extends CarController {
                         break;
 
                     default:
-                        timeToGo = true;
+                       // timeToGo = true;
                         frameCounter = 0;
                 }
             }
@@ -317,10 +325,9 @@ public class MyAIController extends CarController {
 
         }
         else {
-//            timeToGo = true;
+            timeToGo = true;
             frameCounter = 0;
         }
-//    	}
     }
 
 
@@ -330,9 +337,8 @@ public class MyAIController extends CarController {
     private void rotateAntiClockwise( float delta) {
         turnLeft(delta);
         if(frameCounter ==2) {
-//    		applyForwardAcceleration();
             applySafeForwardAcceleration();
-            System.out.println(frameCounter);
+          //  System.out.println(frameCounter);
             frameCounter = 0;
         }
     }
@@ -340,9 +346,8 @@ public class MyAIController extends CarController {
     private void rotateClockwise( float delta) {
         turnRight(delta);
         if(frameCounter ==2) {
-//    		applyForwardAcceleration();
             applySafeForwardAcceleration();
-            System.out.println(frameCounter);
+            //System.out.println(frameCounter);
             frameCounter = 0;
         }
     }
@@ -354,7 +359,7 @@ public class MyAIController extends CarController {
         ArrayList<WorldSpatial.Direction> directionList = new ArrayList<>();
         ArrayList<Integer> result = new ArrayList<>();
         int turns = 1;
-        for(int x = 0; x<wholeList.size()-1; x++) {;
+        for(int x = 0; x<wholeList.size()-1; x++) {
             directionList.add(getDirection(new Coordinate(wholeList.get(x).getName()),new Coordinate(wholeList.get(x+1).getName())));
         }
         for(int j =0; j<directionList.size()-1;j++) {
@@ -364,43 +369,9 @@ public class MyAIController extends CarController {
             turns += 1;
         }
 
+        result.add(wholeList.size()-1);
+        System.out.println(result);
         return result;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private void applySafeReverseAcceleration() {
-        applyReverseAcceleration();
     }
 
     private void applySafeForwardAcceleration() {
@@ -408,146 +379,6 @@ public class MyAIController extends CarController {
         //	applyForwardAcceleration();
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//        // If you are not following a wall initially, find a wall to stick to!
-//        if(!isFollowingWall){
-//            if(getSpeed() < CAR_SPEED){
-//                applyForwardAcceleration();
-//            }
-//            // Turn towards the north
-//            if(!getOrientation().equals(WorldSpatial.Direction.NORTH)){
-//                lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-//                applyLeftTurn(getOrientation(),delta);
-//            }
-//            if(checkNorth(currentView)){
-//                // Turn right until we go back to east!
-//                if(!getOrientation().equals(WorldSpatial.Direction.EAST)){
-//                    lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-//                    applyRightTurn(getOrientation(),delta);
-//                }
-//                else{
-//                    isFollowingWall = true;
-//                }
-//            }
-//        }
-//        // Once the car is already stuck to a wall, apply the following logic
-//        else{
-//
-//            // Readjust the car if it is misaligned.
-//            readjust(lastTurnDirection,delta);
-//
-//            if(isTurningRight){
-//                applyRightTurn(getOrientation(),delta);
-//            }
-//            else if(isTurningLeft){
-//                // Apply the left turn if you are not currently near a wall.
-//                if(!checkFollowingWall(getOrientation(),currentView)){
-//                    applyLeftTurn(getOrientation(),delta);
-//                }
-//                else{
-//                    isTurningLeft = false;
-//                }
-//            }
-//            // Try to determine whether or not the car is next to a wall.
-//            else if(checkFollowingWall(getOrientation(),currentView)){
-//                // Maintain some velocity
-//                if(getSpeed() < CAR_SPEED){
-//                    applyForwardAcceleration();
-//                }
-//                // If there is wall ahead, turn right!
-//                if(checkWallAhead(getOrientation(),currentView)){
-//                    lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-//                    isTurningRight = true;
-//
-//                }
-//
-//            }
-//            // This indicates that I can do a left turn if I am not turning right
-//            else{
-//                lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-//                isTurningLeft = true;
-//            }
-//        }
 
 
 
@@ -631,26 +462,6 @@ public class MyAIController extends CarController {
 
     }
 
-    /**
-     * Checks whether the car's state has changed or not, stops turning if it
-     *  already has.
-     */
-//    private void checkStateChange() {
-//        if(previousState == null){
-//            previousState = getOrientation();
-//        }
-//        else{
-//            if(previousState != getOrientation()){
-//                if(isTurningLeft){
-//                    isTurningLeft = false;
-//                }
-//                if(isTurningRight){
-//                    isTurningRight = false;
-//                }
-//                previousState = getOrientation();
-//            }
-//        }
-//    }
 
     /**
      * Turn the car counter clock wise (think of a compass going counter clock-wise)
@@ -716,126 +527,6 @@ public class MyAIController extends CarController {
 
     }
 
-//    /**
-//     * Check if you have a wall in front of you!
-//     * @param orientation the orientation we are in based on WorldSpatial
-//     * @param currentView what the car can currently see
-//     * @return
-//    //     */
-//    private boolean checkWallAhead(WorldSpatial.Direction orientation, HashMap<Coordinate, MapTile> currentView){
-//        switch(orientation){
-//            case EAST:
-//                return checkEast(currentView);
-//            case NORTH:
-//                return checkNorth(currentView);
-//            case SOUTH:
-//                return checkSouth(currentView);
-//            case WEST:
-//                return checkWest(currentView);
-//            default:
-//                return false;
-//
-//        }
-//    }
-
-//    /**
-//     * Check if the wall is on your left hand side given your orientation
-//     * @param orientation
-//     * @param currentView
-//     * @return
-//    //     */
-//    private boolean checkFollowingWall(WorldSpatial.Direction orientation, HashMap<Coordinate, MapTile> currentView) {
-//
-//        switch(orientation){
-//            case EAST:
-//                return checkNorth(currentView);
-//            case NORTH:
-//                return checkWest(currentView);
-//            case SOUTH:
-//                return checkEast(currentView);
-//            case WEST:
-//                return checkSouth(currentView);
-//            default:
-//                return false;
-//        }
-//
-//    }
-
-//
-//    /**
-//     * Method below just iterates through the list and check in the correct coordinates.
-//     * i.e. Given your current position is 10,10
-//     * checkEast will check up to wallSensitivity amount of tiles to the right.
-//     * checkWest will check up to wallSensitivity amount of tiles to the left.
-//     * checkNorth will check up to wallSensitivity amount of tiles to the top.
-//     * checkSouth will check up to wallSensitivity amount of tiles below.
-//     */
-//    public boolean checkEast(HashMap<Coordinate, MapTile> currentView){
-//        // Check tiles to my right
-//        Coordinate currentPosition = new Coordinate(getPosition());
-//        for(int i = 0; i <= wallSensitivity; i++){
-//            MapTile tile = currentView.get(new Coordinate(currentPosition.x+i, currentPosition.y));
-//            if(tile.isType(MapTile.Type.WALL)){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    public boolean checkWest(HashMap<Coordinate,MapTile> currentView){
-//        // Check tiles to my left
-//        Coordinate currentPosition = new Coordinate(getPosition());
-//        for(int i = 0; i <= wallSensitivity; i++){
-//            MapTile tile = currentView.get(new Coordinate(currentPosition.x-i, currentPosition.y));
-//            if(tile.isType(MapTile.Type.WALL)){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    public boolean checkNorth(HashMap<Coordinate,MapTile> currentView){
-//        // Check tiles to towards the top
-//        Coordinate currentPosition = new Coorswitch(leftRight) {
-//		case LEFT:
-//			lastTurnDirection = WorldSpatial.RelativeDirection.LEFT;
-//			rotateAntiClockwise(delta);
-//			break;
-//
-//		case RIGHT:
-//			lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-//			rotateClockwise(delta);
-//			break;
-//
-//		default:
-//			timeToGo = true;
-//			frameCounter = 0;
-//		}dinate(getPosition());
-//        for(int i = 0; i <= wallSensitivity; i++){
-//            MapTile tile = currentView.get(new Coordinate(currentPosition.x, currentPosition.y+i));
-//            if(tile.isType(MapTile.Type.WALL)){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    public boolean checkSouth(HashMap<Coordinate,MapTile> currentView){
-//        // Check tiles towards the bottom
-//        Coordinate currentPosition = new Coordinate(getPosition());
-//        for(int i = 0; i <= wallSensitivity; i++){
-//            MapTile tile = currentView.get(new Coordinate(currentPosition.x, currentPosition.y-i));
-//            if(tile.isType(MapTile.Type.WALL)){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-
-
-    //-----------------------------------------------------------------
-    //Helper Functions.
-
 
     private WorldSpatial.Direction oppositeOfOrientation(WorldSpatial.Direction dir){
         switch(dir){
@@ -868,18 +559,24 @@ public class MyAIController extends CarController {
 
 
     private WorldSpatial.RelativeDirection leftOrRight(WorldSpatial.Direction targetDir){
-        int caseNum = 0;
+        int caseNum = -1;
         if(Float.compare(getAngle(), 0f) == 0 || Float.compare(getAngle(), 360f) == 0) {
+            lastCase = 0;
             caseNum = 0;
         }
         else if(Float.compare(getAngle(), 90f) == 0) {
+            lastCase = 1;
             caseNum = 1;
         }
         else if(Float.compare(getAngle(), 180f) == 0) {
+            lastCase = 2;
             caseNum = 2;
         }
         else if(Float.compare(getAngle(), 270f) == 0) {
+            lastCase = 3;
             caseNum = 3;
+        }else{
+            caseNum = lastCase;
         }
 
 
@@ -941,7 +638,7 @@ public class MyAIController extends CarController {
 //                return WorldSpatial.RelativeDirection.LEFT;
         }
 
-        System.out.println("THIS IS BAD LINE 887");
+      //  System.out.println("THIS IS BAD LINE 887");
         return null;
 
     }
@@ -967,7 +664,7 @@ public class MyAIController extends CarController {
     // Debug Helpers
     private void debugPrint(String message){
         if(debug){
-            System.out.println("DEBUGGER: "+ message);
+           // System.out.println("DEBUGGER: "+ message);
         }
     }
 
@@ -1017,7 +714,16 @@ public class MyAIController extends CarController {
 
 
 
+    public void debugPrint(List<Node> path){
+        if(debug){
+            System.out.print("Debugger: [");
+            for(Node i: path){
+                System.out.print("("+i.getName()+")");
+            }
+            System.out.println("]");
+        }
 
+    }
 
 
 

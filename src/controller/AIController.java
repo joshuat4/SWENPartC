@@ -135,7 +135,7 @@ public class AIController extends CarController {
 		if(pathList.size() > 0 || processing) {
 			if(processing) {
 				checkStateChange();
-				
+
 				//Identify if target tile is N,S,E or W.
 				try {
 					path.get(counter+1);
@@ -242,8 +242,8 @@ public class AIController extends CarController {
 								}
 							}
 						}
-						
-						
+
+
 					} else {
 						readjust(lastTurnDirection, delta);
 						//If moving in right direction,
@@ -259,9 +259,9 @@ public class AIController extends CarController {
 						}
 
 					}
-					
-					
-					
+
+
+
 				}
 				
 			} else {
@@ -285,12 +285,12 @@ public class AIController extends CarController {
 		} else {
 			debugPrint("End of path list");
 		}
-		
-	
-		
-		
-		
-		
+
+
+
+
+
+
 
 /*		// If you are not following a wall initially, find a wall to stick to!
 		if(!isFollowingWall){
@@ -315,10 +315,10 @@ public class AIController extends CarController {
 		}
 		// Once the car is already stuck to a wall, apply the following logic
 		else{
-			
+
 			// Readjust the car if it is misaligned.
 			readjust(lastTurnDirection,delta);
-			
+
 			if(isTurningRight){
 				applyRightTurn(getOrientation(),delta);
 			}
@@ -340,8 +340,8 @@ public class AIController extends CarController {
 				// If there is wall ahead, turn right!
 				if(checkWallAhead(getOrientation(),currentView)){
 					lastTurnDirection = WorldSpatial.RelativeDirection.RIGHT;
-					isTurningRight = true;				
-					
+					isTurningRight = true;
+
 				}
 
 			}
@@ -351,7 +351,7 @@ public class AIController extends CarController {
 				isTurningLeft = true;
 			}
 		}
-		
+
 		*/
 
 	}
