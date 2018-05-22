@@ -53,6 +53,7 @@ public class MyAIController extends CarController {
     private float speedAtBrake;
     private boolean firstTimeBrake = true;
     private boolean timeToGo = false;
+    private boolean justTurned = false;
 
 
 
@@ -130,10 +131,6 @@ public class MyAIController extends CarController {
 
 
 
-
-
-
-
     }
 
 
@@ -176,10 +173,15 @@ public class MyAIController extends CarController {
 
             System.out.println("distToTurn is: " + distToTurn);
 
+            if(timeToGo && justTurned){
+               currState = STATE.Forward;
+               justTurned = false;
+            }
+
             if((brakeLogic(nextTurn))){
                 currState = STATE.Braking;
-                firstTimeBrake = false;
-                if(getSpeed() <= 0.05f) {
+                System.out.println("HERE: " + getSpeed());
+                if(getSpeed() <= 0.25f) {
                     System.out.println("REEE");
                     currState = STATE.Turning;
                     if(timeToGo) {
@@ -187,9 +189,13 @@ public class MyAIController extends CarController {
                         timeToGo = false;	    			}
                 }
             } else {
-                firstTimeBrake = true;
             }
+
+
+
         }
+
+
 
 
 
@@ -221,9 +227,17 @@ public class MyAIController extends CarController {
         debugPrint("distToPoint: "+ distToPoint);
         debugPrint("res: "+ res);
 
+        if(distToPoint < 0.25f){
+            System.out.println("HHH");
+            return true;
+        }
+
+        System.out.println("TRUTH :" + (distToPoint <= res) );
+
         if(distToPoint <=  res ){
             return true;
         } else {
+            System.out.println(" OK K");
             return false;
         }
 
@@ -260,10 +274,10 @@ public class MyAIController extends CarController {
 
     private void faceTarget(Coordinate currPos, Coordinate targetPos, float delta) {
         WorldSpatial.Direction targetDir = getDirection(currPos, targetPos);
-
-//    	System.out.println(currPos.x + "," + currPos.y);
-//    	System.out.println(targetPos.x + "," + targetPos.y);
-//    	System.out.println("-----------------------");
+        System.out.println("HUH");
+    	System.out.println(currPos.x + "," + currPos.y);
+    	System.out.println(targetPos.x + "," + targetPos.y);
+    	System.out.println("-----------------------");
 
 
 
@@ -278,6 +292,7 @@ public class MyAIController extends CarController {
         if(Float.compare(getAngle(), directionToDegree(targetDir)) <= 0) {
             WorldSpatial.RelativeDirection leftRight = leftOrRight(targetDir);
             if(leftRight == null) {
+                justTurned = true;
                 timeToGo = true;
                 frameCounter = 0;
             }
@@ -302,7 +317,7 @@ public class MyAIController extends CarController {
 
         }
         else {
-            timeToGo = true;
+//            timeToGo = true;
             frameCounter = 0;
         }
 //    	}
@@ -986,10 +1001,18 @@ public class MyAIController extends CarController {
         testpath.add(node12);
         testpath.add(node13);
         testpath.add(new Node("7,12"));
-        testpath.add(new Node("8,12"));
-        testpath.add(new Node("9,12"));
-        testpath.add(new Node("10,12"));
-
+        testpath.add(new Node("7,13"));
+        testpath.add(new Node("7,14"));
+        testpath.add(new Node("6,14"));
+        testpath.add(new Node("5,14"));
+        testpath.add(new Node("4,14"));
+        testpath.add(new Node("3,14"));
+        testpath.add(new Node("3,13"));
+        testpath.add(new Node("3,12"));
+        testpath.add(new Node("3,11"));
+        testpath.add(new Node("3,10"));
+        testpath.add(new Node("4,10"));
+        testpath.add(new Node("5,10"));
     }
 
 
