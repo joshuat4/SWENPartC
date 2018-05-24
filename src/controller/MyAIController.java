@@ -69,8 +69,11 @@ public class MyAIController extends CarController {
 
     }
 
+
+
     @Override
     public void update(float delta) {
+
         HashMap<Coordinate, MapTile> currentView = getView();
 
         for(Coordinate i : currentView.keySet()) {

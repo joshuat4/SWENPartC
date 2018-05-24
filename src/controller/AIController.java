@@ -46,6 +46,7 @@ public class AIController extends CarController {
 	boolean notSouth = true;
 	
 	HashMap<Coordinate, MapTile> wholeMap = new HashMap<>();
+
 	Graph graphWithShortestPaths;
 	int firstTime = 0;
 	boolean hasReachedNextDest = true;
