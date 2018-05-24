@@ -1,12 +1,15 @@
 package controller;
 
 import tiles.MapTile;
+import tiles.MapTile.Type;
 import utilities.Coordinate;
 import world.Car;
 import world.World;
 import world.WorldSpatial;
+import tiles.LavaTrap;
+import tiles.TrapTile;
 
-import java.util.HashMap;
+import java.util.*;
 
 public class FollowWall implements  ExploreStrategy{
     // How many minimum units the wall is away from the player.
@@ -19,7 +22,8 @@ public class FollowWall implements  ExploreStrategy{
     private boolean isTurningRight = false;
     private WorldSpatial.Direction previousState = null; // Keeps track of the previous state
     private HashMap<Coordinate, MapTile> wholeMap;
-    private int count=0;
+    private LinkedHashSet<Integer> keyTest = new LinkedHashSet<Integer>(); 
+    private ArrayList<Integer> keySeen = new ArrayList<Integer>();
 
     // Car Speed to move at
     private final float CAR_SPEED = 3;
@@ -30,24 +34,40 @@ public class FollowWall implements  ExploreStrategy{
 
     public FollowWall(CarController controller){
         this.controller = controller;
+        wholeMap = controller.getMap();
     }
 
     public HashMap<Coordinate, MapTile> getWholeMap(CarController controller) {
         return null;
     }
+    
 
-    public void update(float delta) {
+
+    public HashMap<Coordinate, MapTile> getWholeMap(float delta) {
 
         // Gets what the car can see
         HashMap<Coordinate, MapTile> currentView = controller.getView();
-
+        
+        
+        
+        if(keySeen.size()+1 == controller.getKey()) {
+        	System.out.println("SWITCH TO PATHFINDING");
+        	return wholeMap;
+        }
+        
         checkStateChange();
-
-
+       
         for(Coordinate i : currentView.keySet()) {
             //Building up wholeMap with data from currentView
-            if(i.x >= 0 && i.y >= 0 && i.x < World.MAP_WIDTH && i.y < World.MAP_HEIGHT ) {
+            if(currentView.get(i).getType() == Type.TRAP || currentView.get(i).getType() == Type.FINISH) {
                 wholeMap.put(i, currentView.get(i));
+                if(currentView.get(i).getType() == Type.TRAP && currentView.get(i) instanceof LavaTrap) {
+                	MapTile m = currentView.get(i);
+                	LavaTrap potentialKey = (LavaTrap) m;
+                	if(potentialKey.getKey() != 0 && keyTest.add(potentialKey.getKey())) {
+                		keySeen.add(potentialKey.getKey());
+                	}
+                }  	
             }
         }
 
@@ -110,7 +130,8 @@ public class FollowWall implements  ExploreStrategy{
                 isTurningLeft = true;
             }
         }
-
+        return null;
+        
 
     }
 

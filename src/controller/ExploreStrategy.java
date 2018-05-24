@@ -6,8 +6,7 @@ import java.util.*;
 
 public interface ExploreStrategy {
 
-    public HashMap<Coordinate, MapTile> getWholeMap(CarController controller);
+    public HashMap<Coordinate, MapTile> getWholeMap(float delta);
 
-    public void update(float delta);
 
 }

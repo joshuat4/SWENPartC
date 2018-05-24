@@ -37,7 +37,11 @@ public class testAIController extends CarController {
 
     @Override
     public void update(float delta) {
-       strat.update(delta);
+    	try {
+        strat.getWholeMap(delta);
+    	}
+    	catch(NullPointerException e) {  		
+    	}
     }
 
 
