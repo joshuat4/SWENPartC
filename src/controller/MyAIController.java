@@ -126,6 +126,13 @@ public class MyAIController extends CarController {
 
             } else {
                 currPath = pathList.poll();
+//                if(getOrientation().equals(getDirection(currPos, new Coordinate(currPath.get(1).getName())))){
+//                    System.out.println("hhhhhhh");
+//                    currState = STATE.Forward;
+//                }
+//                else{
+//                    currState = STATE.Turning;
+//                }
                 turnList = getTurnList(currPath);
                 turnIndex = 0;
                 debugPrint(currPath);
@@ -168,7 +175,6 @@ public class MyAIController extends CarController {
             if(currPos.equals(nextTurn)) {
                 //currState = STATE.Turning;
             }
-
             if(currPos.equals(targetPos)) {
                 counter += 1;
                 try {
@@ -183,7 +189,9 @@ public class MyAIController extends CarController {
             }
 
             if (timeToGo) {
+                //if we have moved past the turning block
                 if(counter-1 >= turnList.get(turnIndex)) {
+                    System.out.println("xd");
                     turnIndex += 1 ;
                     currState = STATE.Forward;
                     //timeToGo = false;
@@ -194,10 +202,11 @@ public class MyAIController extends CarController {
 
 //            System.out.println("distToTurn is: " + distToTurn);
 
-            if(timeToGo && justTurned){
-               currState = STATE.Forward;
-               justTurned = false;
-            }
+//            if(timeToGo && justTurned){
+//                System.out.println("Clown Fiesta");
+//               currState = STATE.Forward;
+//               justTurned = false;
+//            }
 
             if((brakeLogic(nextTurn))){
                 currState = STATE.Braking;
@@ -230,8 +239,8 @@ public class MyAIController extends CarController {
         float distToPointY = (Math.abs(getY() - nextTurn.y));
         float distToPoint;
 
-        debugPrint("dist to Point: "+ distToPointX);
-        debugPrint("dist to Point: "+ distToPointY);
+        debugPrint("dist to PointX: "+ distToPointX);
+        debugPrint("dist to PointY: "+ distToPointY);
         debugPrint("speed: " + getSpeed());
 
         if(getOrientation().equals(WorldSpatial.Direction.EAST) ||
@@ -248,7 +257,7 @@ public class MyAIController extends CarController {
         debugPrint("distToPoint: "+ distToPoint);
         debugPrint("res: "+ res);
 
-        if(distToPoint < 0.25f){
+        if(distToPoint < 0.20f){
           //  System.out.println("HHH");
             return true;
         }
@@ -283,8 +292,6 @@ public class MyAIController extends CarController {
     private void brakingState() {
         applyBrake();
     }
-
-
 
     private void faceTarget(Coordinate currPos, Coordinate targetPos, float delta) {
         WorldSpatial.Direction targetDir = getDirection(currPos, targetPos);
@@ -661,10 +668,11 @@ public class MyAIController extends CarController {
 
 
 
+
     // Debug Helpers
     private void debugPrint(String message){
         if(debug){
-           // System.out.println("DEBUGGER: "+ message);
+            System.out.println("DEBUGGER: "+ message);
         }
     }
 

@@ -9,7 +9,7 @@ public class Node {
      
     private Integer danger = Integer.MAX_VALUE;
      
-    Map<Node, Integer> adjacentNodes = new HashMap<>();
+    private Map<Node, Integer> adjacentNodes = new HashMap<>();
     
     public void addDestination(Node destination, int danger) {
         adjacentNodes.put(destination, danger);
