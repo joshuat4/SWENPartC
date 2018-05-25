@@ -51,7 +51,6 @@ public class FollowWall implements  ExploreStrategy{
         
         
         if(keySeen.size()+1 == controller.getKey()) {
-        	System.out.println("SWITCH TO PATHFINDING");
         	return wholeMap;
         }
         
