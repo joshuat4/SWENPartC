@@ -8,6 +8,12 @@ import tiles.LavaTrap;
 
 import java.util.*;
 
+//this strategy is the exact strategy initially provided to us with the skeleton code,
+//but abstracted out as an explore strategy. This was done so the design would be more
+//modular, allowing anyone who works on this project after to change the explore strategy
+//if needed. Our implementation uses this strategy initially to explore the map before
+//using Djikstra's path finding to get the car to finish the puzzle.
+
 public class FollowWall implements  ExploreStrategy{
     // How many minimum units the wall is away from the player.
     private int wallSensitivity = 2;
@@ -46,13 +52,14 @@ public class FollowWall implements  ExploreStrategy{
         HashMap<Coordinate, MapTile> currentView = controller.getView();
         
         
-        
+        //if we have seen all the keys... we have explored the wholeMap and got what we needed.
         if(keySeen.size()+1 == controller.getKey()) {
         	return wholeMap;
         }
         
         checkStateChange();
        
+        //checks currentView for keys in lavatraps, and add it to our hashMap of the entire map.
         for(Coordinate i : currentView.keySet()) {
             //Building up wholeMap with data from currentView
             if(currentView.get(i).getType() == Type.TRAP || currentView.get(i).getType() == Type.FINISH) {
@@ -66,6 +73,10 @@ public class FollowWall implements  ExploreStrategy{
                 }  	
             }
         }
+        
+        
+/////////CODE GIVEN TO US FROM SKELETON CODE. WE DID NOT WRITE THIS. ALL CREDIT BELONGS TO////////////
+/////////AUTHOR OF THE SKELETON CODE. 
 
         // If you are not following a wall initially, find a wall to stick to!
         if(!isFollowingWall){

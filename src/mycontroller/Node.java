@@ -2,23 +2,23 @@ package mycontroller;
 import java.util.*;
 
 public class Node {
-    
     private String name;
-     
     private List<Node> shortestPath = new LinkedList<>();
-     
     private Integer danger = Integer.MAX_VALUE;
-     
     private Map<Node, Integer> adjacentNodes = new HashMap<>();
     
-    public void addDestination(Node destination, int danger) {
-        adjacentNodes.put(destination, danger);
-    }
-  
+    
     public Node(String name) {
         this.setName(name);  
     }
      
+    
+    
+    //adds adjacent nodes to the node.
+    public void addDestination(Node destination, int danger) {
+        adjacentNodes.put(destination, danger);
+    }
+ 
     // getters and setters
     public int getDanger() {
     	return this.danger;
