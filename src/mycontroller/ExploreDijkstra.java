@@ -9,11 +9,10 @@ import utilities.Coordinate;
 public class ExploreDijkstra extends Dijkstra{
     public static List<Node> exploreDijkstras(HashMap<Coordinate, MapTile> wholeMap, Coordinate startingPosition){
         Node startingNode = new Node("no");
-        Graph graph = new Graph();
         List<Node> returnPlaceholder = new ArrayList<>();
 
         //Build graph --------------------------------------------------------------
-        graph = initialiseDijkstras(startingPosition, wholeMap);
+        Graph graph = initialiseDijkstras(startingPosition, wholeMap);
         //--------------------------------------------------------------
         Graph smollGraph = Graph.calculateShortestPathFromSource(graph,startingNode);
 
