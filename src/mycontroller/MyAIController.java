@@ -166,13 +166,11 @@ public class MyAIController extends CarController {
 //            }
 
             if((brakeLogic(nextTurn))){
-                System.out.println("This is probs whats happening");
                 currState = STATE.Braking;
             }
 
             System.out.println(getSpeed());
             if(getSpeed() <= 0.1f && getOrientation() != getDirection(currPos, targetPos)) {
-            System.out.println("This should happen right after that");
                     currState = STATE.Turning;
                 }
             if (timeToGo) {
@@ -239,6 +237,7 @@ public class MyAIController extends CarController {
 
     //
     private void forwardState() {
+
         applySafeForwardAcceleration();
     }
 
@@ -255,7 +254,6 @@ public class MyAIController extends CarController {
 
     private void faceTarget(Coordinate currPos, Coordinate targetPos, float delta) {
         WorldSpatial.Direction targetDir = getDirection(currPos, targetPos);
-//        System.out.println("HUH");
 //    	System.out.println(currPos.x + "," + currPos.y);
 //    	System.out.println(targetPos.x + "," + targetPos.y);
 //    	System.out.println("-----------------------");
@@ -289,7 +287,6 @@ public class MyAIController extends CarController {
                         frameCounter = 0;
                 }
             }
-
 
         }
         else {
