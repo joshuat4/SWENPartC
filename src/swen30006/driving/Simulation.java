@@ -159,6 +159,7 @@ public class Simulation extends ApplicationAdapter implements InputProcessor {
 			Gdx.app.exit();
 		} else {
 			batch.end();
+			batch.dispose();
 		}
 	}
 	

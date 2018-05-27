@@ -1,13 +1,10 @@
-package controller;
+package mycontroller;
 
 import tiles.MapTile;
 import tiles.MapTile.Type;
 import utilities.Coordinate;
-import world.Car;
-import world.World;
 import world.WorldSpatial;
 import tiles.LavaTrap;
-import tiles.TrapTile;
 
 import java.util.*;
 

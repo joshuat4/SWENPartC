@@ -1,4 +1,4 @@
-package controller;
+package mycontroller;
 
 import tiles.MapTile;
 import utilities.Coordinate;
@@ -7,7 +7,7 @@ import world.WorldSpatial;
 
 import java.util.*;
 
-public class testAIController extends CarController {
+public class MyAIController extends CarController {
 
     private ExploreStrategy strat;
     private PathFindingStrategy strat2;
@@ -52,7 +52,7 @@ public class testAIController extends CarController {
 
 
 
-    public testAIController(Car car) {
+    public MyAIController(Car car) {
         super(car);
         this.strat = new FollowWall(this);
         this.strat2 = new PathFindingDijkstra();

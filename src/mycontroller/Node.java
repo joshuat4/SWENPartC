@@ -1,4 +1,4 @@
-package controller;
+package mycontroller;
 import java.util.*;
 
 public class Node {

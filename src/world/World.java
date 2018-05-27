@@ -13,7 +13,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 
-import controller.CarController;
+import mycontroller.CarController;
 import tiles.MapTile;
 import tiles.TrapTile;
 import tiles.LavaTrap;

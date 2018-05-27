@@ -1,14 +1,10 @@
-package controller;
+package mycontroller;
 
 import java.util.*;
 
 import tiles.*;
 import tiles.MapTile.Type;
 import utilities.Coordinate;
-import utilities.PeekTuple;
-import world.Car;
-import world.World;
-import world.WorldSpatial;
 
 public class Dijkstras {
     public static List<Node> exploreDijkstras(HashMap<Coordinate, MapTile> wholeMap, Coordinate startingPosition){

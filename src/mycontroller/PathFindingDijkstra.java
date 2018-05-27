@@ -1,10 +1,9 @@
-package controller;
+package mycontroller;
 
 import tiles.LavaTrap;
 import tiles.MapTile;
 import utilities.Coordinate;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.*;
 

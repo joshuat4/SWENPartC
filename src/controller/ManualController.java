@@ -2,10 +2,11 @@ package controller;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import mycontroller.CarController;
 import world.Car;
 
 // Manual Controls for the car
-public class ManualController extends CarController{
+public class ManualController extends CarController {
 	
 	public ManualController(Car car){
 		super(car);
